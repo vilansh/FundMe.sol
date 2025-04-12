@@ -1,49 +1,56 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
 
-import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+pragma solidity ^0.8.24;
+
 import {PriceConverter} from "./PriceConverter.sol";
 
 error NotOwner();
 
 contract FundMe {
+    //Get funds from the users
+    //Withdraw funds to the owner of the contract
     using PriceConverter for uint256;
 
-    mapping(address => uint256) public addressToAmountFunded;
+    //Set a minimum funding value in USD
+    uint256 public constant MINIMUM_USD = 5e18;
+
     address[] public funders;
 
-    address public /* immutable */ i_owner;
-    uint256 public constant MINIMUM_USD = 5 * 10 ** 18;
+    address public immutable i_owner; 
 
-    constructor() {
+    mapping( address => uint256) public addressToAmountFunded;
+
+    constructor(){
         i_owner = msg.sender;
     }
-
-    function fund() public payable {
-        require(msg.value.getConversionRate() >= MINIMUM_USD, "You need to spend more ETH!");
-        // require(PriceConverter.getConversionRate(msg.value) >= MINIMUM_USD, "You need to spend more ETH!");
-        addressToAmountFunded[msg.sender] += msg.value;
+    function fund() public payable{
+        // Allow Users to send $
+        // Have a minimum $ sent
+        // 1.How do we send ETH to this transact?
+       
+        require(msg.value.getConversionRate() >= MINIMUM_USD, "Didnt send enough ETH"); //1e18 = 1ETH = 1*10**18 WEI
         funders.push(msg.sender);
+        addressToAmountFunded[msg.sender] =addressToAmountFunded[msg.sender]+ msg.value;
+        //msg.sender = global variable = address of the person calling the function
+        //msg.value = global variable = The amount of ETH (in wei) that the person is sending with this transaction
     }
 
-    function getVersion() public view returns (uint256) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
-        return priceFeed.version();
-    }
-
-    modifier onlyOwner() {
-        // require(msg.sender == owner);
-        if (msg.sender != i_owner) revert NotOwner();
-        _;
-    }
 
     function withdraw() public onlyOwner {
-        for (uint256 funderIndex = 0; funderIndex < funders.length; funderIndex++) {
-            address funder = funders[funderIndex];
+        // require(msg.sender == owner, "Only Owner can withdraw");
+        //for(starting index ; ending index ; step amount)
+        for(uint256 funderIndex = 0 ; funderIndex < funders.length; funderIndex++){
+            address funder =  funders[funderIndex];
             addressToAmountFunded[funder] = 0;
+
         }
-        funders = new address[](0);
-        // // transfer
+            //resetting the array
+            funders = new address[](0);
+
+            //Actually withdraw the funds now
+            //3 methods, Use anyone
+
+            // // transfer
         // payable(msg.sender).transfer(address(this).balance);
 
         // // send
@@ -51,10 +58,19 @@ contract FundMe {
         // require(sendSuccess, "Send failed");
 
         // call
-        (bool callSuccess,) = payable(msg.sender).call{value: address(this).balance}("");
+         (bool callSuccess,) = payable(msg.sender).call{value: address(this).balance}("");
         require(callSuccess, "Call failed");
+            
     }
-    // Explainer from: https://solidity-by-example.org/fallback/
+
+    modifier onlyOwner(){
+        // require(msg.sender == i_owner , "Only the Owner can perform this action!");
+        if(msg.sender != i_owner){
+            revert NotOwner();
+        }
+        _;
+    }
+
     // Ether is sent to contract
     //      is msg.data empty?
     //          /   \
@@ -73,4 +89,8 @@ contract FundMe {
     receive() external payable {
         fund();
     }
+
 }
+
+
+
