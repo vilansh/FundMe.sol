@@ -27,7 +27,8 @@ contract FundMe {
         // Allow Users to send $
         // Have a minimum $ sent
         // 1.How do we send ETH to this transact?
-       
+       // msg.sender
+        //msg.value
         require(msg.value.getConversionRate() >= MINIMUM_USD, "Didnt send enough ETH"); //1e18 = 1ETH = 1*10**18 WEI
         funders.push(msg.sender);
         addressToAmountFunded[msg.sender] =addressToAmountFunded[msg.sender]+ msg.value;
