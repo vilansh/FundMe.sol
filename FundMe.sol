@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 
 import {PriceConverter} from "./PriceConverter.sol";
 
-error NotOwner();
+error FundMe__NotOwner();
 
 contract FundMe {
     //Get funds from the users
@@ -65,7 +65,7 @@ contract FundMe {
     }
 
     modifier onlyOwner(){
-        // require(msg.sender == i_owner , "Only the Owner can perform this action!");
+        // require(msg.sender == FundMe__i_owner , "Only the Owner can perform this action!");
         if(msg.sender != i_owner){
             revert NotOwner();
         }
